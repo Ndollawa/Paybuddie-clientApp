@@ -1,0 +1,291 @@
+import {useDispatch, useSelector } from 'react-redux';
+import { AxiosError } from 'axios';
+import React, {useRef,useState,useEffect,FormEvent, FormEventHandler } from 'react';
+import { Link } from 'react-router-dom';
+import {GoKey} from 'react-icons/go';
+import {GrMail} from 'react-icons/gr';
+import {FaUser,FaRegUserCircle,FaKeycdn} from 'react-icons/fa';
+import axios from '../../app/api/axios';
+import useAxiosFunc from '../../app/utils/hooks/useAxiosFunc'; 
+import {useCompanyDetails} from '../dashboard/pages/Settings/settingsConfigSlice';
+import {useRegisterMutation} from './authApiSlice'
+import OtherBody from '../dashboard/components/OtherBody';
+
+
+// username regex must start with a lowercase or uppercase laters and must be followed by lower or uppercase or digits,- or _ of 3 to 23 characters
+const USER_REGEX = /^[a-zA-Z][a-zA-z0-9-_]{3,23}$/;
+// requires atleast 0ne uppercase, lowercase,digit, special character and a total of 8 t0 24 characters
+const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
+
+
+
+
+
+interface Messages{
+    type:string,
+    msg:string
+}
+
+const Register:React.FC = () => {
+
+    const {siteName,logo,contact} = useSelector(useCompanyDetails);
+
+
+const userRef = useRef <HTMLInputElement>(null);
+const emailRef = useRef <HTMLInputElement>(null);
+const errRef = useRef <HTMLInputElement>(null);
+const successRef = useRef <HTMLInputElement>(null);
+
+const [response,error,loading,axiosFetch] = useAxiosFunc();
+const [user,setUser] = useState('');
+const [validate, setValidate] = useState('');
+const [validName,setValidName] = useState(false);
+const [userFocus,setUserFocus] = useState(false);
+
+const [email,setEmail] = useState('');
+const [validEmail,setValidEmail] = useState(false);
+const [emailFocus,setEmailFocus] = useState(false);
+
+const [pwd,setPwd] = useState('');
+const [validPwd,setValidPwd] = useState(false);
+const [pwdFocus,setPwdFocus] = useState(false);
+
+const [matchPwd,setMatchPwd] = useState('');
+const [validMatch,setValidMatch] = useState(false);
+const [matchFocus,setMatchFocus] = useState(false);
+
+const [msg,setMsg] = useState<Messages>();
+const [success,setSuccess] = useState(false);
+// const [userFocus,setUserFocus] = useState(false);
+
+const dispatch = useDispatch()
+const [register,{isLoading}] = useRegisterMutation();
+useEffect(()=>{
+    userRef.current?.focus();
+}, [])
+
+useEffect(()=>{
+    setMsg(undefined)
+}, [user,email,pwd,matchPwd]);
+ 
+
+useEffect(()=>{
+    const result = USER_REGEX.test(user);
+   setValidName(result)
+}, [user]);
+
+useEffect(()=>{
+    const result = EMAIL_REGEX.test(email);
+    setValidEmail(result)
+}, [email]);
+
+useEffect(()=>{
+    const result = PWD_REGEX.test(pwd);
+    setValidPwd(result);
+    const match = pwd === matchPwd && pwd !== "";
+    setValidMatch(match)
+}, [pwd,matchPwd]);
+
+
+const checkDuplicates:FormEventHandler = async (e:FormEvent) =>{
+  
+        axiosFetch({
+            axiosInstance:axios,
+            method: 'POST',
+            url: '/checkduplicate',
+            requestConfig: {
+                data: {
+                    user:validate
+                }
+            }
+        }
+    )
+    if(!error){
+        console.log(response)
+        if(response.message === 'available'){
+             setValidate(user);
+            setMsg({type:'success',msg:'Username Available'}) 
+        }else if(response.message === 'taken'){
+            setMsg({type:'info',msg:'Username Taken'}) 
+        }
+    }else{
+        setMsg({type:'error',msg:error})
+    }
+    }
+const handleRegistration:FormEventHandler = async (e:FormEvent) =>{
+    e.preventDefault();
+    try{
+   
+        // redux-rtkQuery approach
+        await register({username:user,email,password:pwd}).unwrap()
+        
+    }catch(error){
+        const err = error as AxiosError;
+            if(!err?.response){
+                setMsg({type:'danger',msg:'No Server Response'});
+            }else if(err.response?.status === 400){
+                setMsg({type:'warning',msg:'Missing form detail(s)'} )
+            }else{
+                setMsg({type:'danger',msg:'Registration Failed'})
+            }
+            errRef.current?.focus();
+        }
+      setMsg({type:'success',msg:'New Account successfully created!'}) 
+
+    setSuccess(true);
+    setUser('');
+    setEmail('');
+    setPwd('');
+    setMatchPwd('');
+   
+    }
+
+  return (
+    <OtherBody>
+    
+        <div className="container h-100">
+            <div className="row justify-content-center h-100 align-items-center">
+                <div className="col-md-6">
+                    <div className="authincation-content">
+                        <div className="row no-gutters">
+                            <div className="col-xl-12">
+                                <div className="auth-form">
+									<div className="text-center mb-3">
+										<Link to="index-2.html" className="brand-logo">
+											<img src={logo} alt={siteName} width='150' />
+										</Link>
+									</div>
+                                    <h4 className="text-center mb-4">Sign up your account</h4>
+                                    <form action="" onSubmit={handleRegistration}>
+                                        {success && <div ref={successRef} aria-live='assertive' className={`alert alert-success alert-dismissible suserhow`}>
+                                        <span className="d-flex"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="me-2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> <strong>Success!</strong><div> &ensp; Account Registered Successfully!<br/>You can now <strong><Link to='/auth/login'>Login</Link></strong></div></span>
+                                        <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="btn-close">
+                                        </button>
+                                    
+                                        </div>
+                                        }
+                                    {msg && <div ref={errRef} aria-live='assertive' className={`alert alert-${msg.type} alert-dismissible suserhow`}>
+									<>{
+                                    msg.type === 'success'
+                                    ?<><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="me-2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> <strong>Success!</strong></>
+									:
+                                    msg.type === 'warning'
+                                    ?<><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="me-2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg><strong>Warning!</strong></>
+									:msg.type === 'danger'
+                                    ? <>
+                                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="me-2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                    <strong>Error!</strong></>
+                                    :msg.type === 'danger'
+                                    ? <><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="me-2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg><strong>Success!</strong></> 
+                                    :msg.type === 'info'
+                                    ? <><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="me-2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg><strong>Info!</strong></> :null} {msg.msg}.
+									<button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="btn-close">
+                                    </button>
+                                    </>
+                                </div>} 
+                                        <div className="form-group"><label className="mb-1"><strong>Username</strong></label>
+                                            <div className={validName? "input-group input-success":"input-group input-default"}>
+                                            <span className="input-group-text"><FaRegUserCircle fontSize='1rem'/></span>
+                                                
+                                                <input 
+                                                type="text" 
+                                                className="form-control" 
+                                                placeholder="username"
+                                                autoComplete='off'
+                                                ref={userRef}
+                                                required
+                                                aria-invalid ={validName ? "false": "true"}
+                                                aria-describedby="uidnote"
+                                                onChange={(e)=> setUser(e.target.value)}
+                                                onKeyUp={checkDuplicates}
+                                                onFocus={()=>setUserFocus(true)}
+                                                onBlur={()=>setUserFocus(false)}
+                                                value={user}
+                                                />
+                                            </div>
+                                        </div>
+                                        {(userFocus && !validName) && <p className='alert alert-danger' id='uidnote'>4 to 24 characters.<br/>Must begin with  a letter.<br/> Letters, numbers, underscore,hyphens, % allowed</p>}
+                                        <div className="form-group"><label className="mb-1"><strong>Email</strong></label>
+                                        <div className={validEmail? "input-group input-success":"input-group input-default"}>
+                                        <span className="input-group-text"><GrMail fontSize='1rem' /></span>
+                                            
+                                            <input 
+                                            type="email"
+                                            className="form-control" 
+                                            placeholder="hello@example.com"
+                                            onChange={(e)=>setEmail(e.target.value)}
+                                            autoComplete='off'
+                                            required
+                                            ref={emailRef}
+                                            aria-invalid ={validEmail ? "false": "true"}
+                                            aria-describedby="uemailnote"
+                                            onKeyUp={(e)=> setEmail(email)}
+                                            onFocus={()=>setEmailFocus(true)}
+                                            onBlur={()=>setEmailFocus(false)}
+                                            value={email}
+                                             />
+                                        </div>
+                                        </div>
+                                        {(emailFocus &&  !validEmail) &&<p className='alert alert-danger' id='uemailnote'>Must begin with letter follwed by @<br/>and a provider and end with a '.com'.<br/> eg. youremail@provider.com</p>}
+                                        <div className="form-group"><label className="mb-1"><strong>Password</strong></label>
+                                         <div className={validPwd? "input-group input-success":"input-group input-default"}>
+                                         <span className="input-group-text"><GoKey fontSize='1rem'/></span>
+                                         
+                                            <input 
+                                            type="password" 
+                                            className="form-control" 
+                                            required
+                                            aria-invalid ={validPwd ? "false": "true"}
+                                            aria-describedby="pwdnote"
+                                            onChange={(e)=> setPwd(e.target.value)}
+                                            onFocus={()=>setPwdFocus(true)}
+                                            onBlur={()=>setPwdFocus(false)}
+                                            placeholder="password"
+                                            value={pwd}
+                                            
+                                            />
+                                            </div>
+                                        </div>
+                                        {(pwdFocus && ! validPwd) && <p className='alert alert-danger' id='pwdnote'>8 to 24 characters.<br/>Must include uppercase and lowercase letters, a number and a special character.<br/> Allowed Special characters: <span aria-label="underscore">_</span> <span aria-label="hyphens">-</span><span aria-label="at symbol">@</span><span aria-label="hashtag">#</span><span aria-label="dollar sign">$</span><span aria-label="percent">% </span> </p>}
+                                        <div className="form-group"><label className="mb-1"><strong>Confirm Password</strong></label>
+                                         <div className={validMatch? "input-group input-success":"input-group input-default"}>
+                                         <span className="input-group-text"><FaKeycdn fontSize='1rem'/></span>
+                                         
+                                            <input 
+                                            type="password" 
+                                            className="form-control" 
+                                            required
+                                            aria-invalid ={validMatch ? "false": "true"}
+                                            aria-describedby="confirmpwdnote"
+                                            onChange={(e)=> setMatchPwd(e.target.value)}
+                                            onFocus={()=>setMatchFocus(true)}
+                                            onBlur={()=>setMatchFocus(false)}
+                                            value={matchPwd}
+                                            placeholder="confirm password"
+                                            />
+                                            </div>
+                                        </div>
+                                        {(matchFocus && !validMatch) && <p className='alert alert-danger' id='confirmpwdnote'>Passwords do not match!</p>}
+                                        <div className="text-center mt-4">
+                                            <button type="submit" 
+                                            disabled={!validEmail && !validPwd && !validName && !validMatch} className="btn btn-primary btn-block">Sign me up</button>
+                                        </div>
+                                    </form>
+                                    <div className="new-account mt-3">
+                                        <p>Already have an account? <Link className="text-primary" to="/login">Sign in</Link></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+   
+    </OtherBody>
+  )
+}
+
+export default Register
