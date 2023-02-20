@@ -1,5 +1,8 @@
-import React from 'react'
-import {Navigate, Routes,Route} from 'react-router-dom';
+import React,{useContext} from 'react'
+import {Navigate, Routes,Route,useLocation} from 'react-router-dom';
+import { useSelector,useDispatch } from 'react-redux';
+import {ToastContainer} from 'react-toastify'
+import { selectCurrentToken } from './features/auth/authSlice';
 import RequireAuth from './features/dashboard/components/RequireAuth';
 import PersistLogin from './features/dashboard/components/PersistLogin';
 import Prefetch from './features/auth/Prefetch';
@@ -34,6 +37,7 @@ import Error503 from './features/errorPages/Error503';
 // dashboar pages
 import DashboardHomepage from './features/dashboard/pages/Home/HomePage'
 import Profile from './features/dashboard/pages/Profile/Profile';
+import ProfileEdit from './features/dashboard/pages/Profile/ProfileEdit';
 import Market from './features/dashboard/pages/Market/Market';
 import Wallet from './features/dashboard/pages/Wallet/Wallet';
 import Transaction from './features/dashboard/pages/Transaction/Transaction';
@@ -42,6 +46,7 @@ import CoinDetail from './features/dashboard/pages/CoinDetail/CoinDetail';
 import User from './features/dashboard/pages/Users/User';
 import Users from './features/dashboard/pages/Users/Users';
 import FaqAdmin from './features/dashboard/pages/Faq/Faq';
+import Slider from './features/dashboard/pages/Slider/Slider';
 
 // auth routes
 import Login from './features/auth/Login';
@@ -57,37 +62,44 @@ import TermsConditionsSetting from './features/dashboard/pages/Settings/componen
 import PrivacyPolicySetting from './features/dashboard/pages/Settings/components/PrivacyPolicy';
 import SiteImage from './features/dashboard/pages/Settings/components/SiteImage';
 import Layout from './features/Layout/Layout';
-import { useDispatch, useSelector } from 'react-redux';
-import { useGetSettingsMutation } from './features/dashboard/pages/Settings/settingApiSlice';
+import { useGetSettingsQuery } from './features/dashboard/pages/Settings/settingApiSlice';
+import { setSettings,  useSettings } from './features/dashboard/pages/Settings/settingsConfigSlice';
+// import SocketIO from './app/utils/context/SocketIO';
 
 
 
 const App= ()=>{
 const [pageTitle, setPageTitle] = React.useState("Home");
-const dispatch  = useDispatch()
-const [getSettings,{isLoading}] = useGetSettingsMutation();
-
-
-React.useEffect(() => {
-  (async()=>{
-
-try {
-  await getSettings()
-} catch (error) {
-  console.log(error)
-}
-  })()
-
-
-  return () => {
+const location  = useLocation()
+const dispatch = useDispatch()
+const currentToken = useSelector(selectCurrentToken)
+const {
+    data: settings,
+    isLoading,
+    isSuccess,
+    isError,
+    error
+  } = useGetSettingsQuery('settingList', {
+    pollingInterval: 15000,
+    refetchOnFocus: true,
+    refetchOnMountOrArgChange: true
+  })
+  //  const {_id} = useSelector(useSettings)
+  const { setting } = useGetSettingsQuery("settingsList", {
+    selectFromResult: ({ data }) => ({
+        setting: data?.entities[data.ids[0]]
+    }),
+  })
+  // console.log(_id)
+  React.useEffect(() => {
+    if(!isLoading && isSuccess) dispatch(setSettings(setting))
    
-  };
-}, [])
-
+  }, [setting,isSuccess,isLoading])
   return (
       
-            
+            <>
                     
+            <ToastContainer/>
           <Routes>
             {/* Public Routes */}{/* ^/$|/index(.html)? */}
              <Route path="error"  element={<Layout pageData={{pageTitle:"Dashboard"}}/> }>
@@ -99,10 +111,10 @@ try {
                       <Route path="500" element={<Error500 />} />
                       <Route path="503" element={<Error503/>} />
               </Route>
-                  <Route path="auth" element={<Layout pageData={{pageTitle:"Dashboard"}}/>}  >
-                      <Route index element={<Login/>} />
-                      <Route path="login" element={<Login />} />
-                      <Route path="register" element={<Register/>} />
+              <Route path="auth" element={<Layout pageData={{pageTitle:"Dashboard"}}/>}  >
+                      <Route index element={currentToken?<Navigate state={{from:location}} to={'/dashboard'}/> :<Login/>} />
+                      <Route path="login" element={currentToken?<Navigate state={{from:location}} to={'/dashboard'}/> :<Login />} />
+                      <Route path="register" element={currentToken?<Navigate state={{from:location}} to={'/dashboard'}/> :<Register/>} />
                   
               </Route>
             <Route element={<Prefetch/>}>
@@ -134,11 +146,11 @@ try {
               {/* Protected Routes */}
 
             <Route element={<PersistLogin />} >
-              
-            <Route element={<RequireAuth allowedRoles={[1000,1001,1002,1003]} />} >
+            <Route element={<RequireAuth allowedRoles={[1002,1003]} />} >
             <Route path="/dashboard" element={<Layout pageData={{pageTitle:"Dashboard"}}/>} >
                   <Route index element={<DashboardHomepage/>} />
-                  <Route path="profile" element={<Profile pageData={{pageTitle:"Profile"}}/>} />
+                  <Route path="profile" element={<Profile/>} />
+                  <Route path="profile/edit" element={<ProfileEdit />} />
                   <Route path="wallet" element={<Wallet pageData={{pageTitle:"Wallet",coverImage:'assets/images/backgrounds/page-header-bg-1-1.jpg'}}/>} />
                   <Route path="market" element={<Market pageData={{pageTitle:"Market",coverImage:'assets/images/backgrounds/page-header-bg-1-1.jpg'}}/>} />
                   <Route path="transaction" element={<Transaction pageData={{pageTitle:"Transaction",coverImage:'assets/images/backgrounds/page-header-bg-1-1.jpg'}}/>} />
@@ -146,12 +158,15 @@ try {
                   <Route path="user/:userId" element={<User pageData={{pageTitle:"User",coverImage:'assets/images/backgrounds/page-header-bg-1-1.jpg'}}/>} />
                   <Route path="messenger" element={<Chat pageData={{pageTitle:"Messenger",coverImage:'assets/images/backgrounds/page-header-bg-1-1.jpg'}}/>} />
                   <Route path="coin-Detail/:id" element={<CoinDetail pageData={{pageTitle:"Coin Data",coverImage:'assets/images/backgrounds/page-header-bg-1-1.jpg'}}/>} />
+                 
+            <Route element={<RequireAuth allowedRoles={[1000,1001]} />} >
                   <Route path="privacy-and-Policy" element={<PrivacyPolicy pageData={{pageTitle:"Privacy and Policy",coverImage:'assets/images/backgrounds/page-header-bg-1-1.jpg'}}/>} />
                   <Route path="faq" element={<FaqAdmin pageData={{pageTitle:"Privacy and Policy",coverImage:'assets/images/backgrounds/page-header-bg-1-1.jpg'}}/>} />
                   <Route path="our-team" element={<Team pageData={{pageTitle:"Our Team",coverImage:'assets/images/backgrounds/page-header-bg-1-1.jpg'}}/>} />
                   <Route path="our-team/:id/member/" element={<Member pageData={{pageTitle:"Team Member",coverImage:'assets/images/backgrounds/page-header-bg-1-1.jpg'}}/>} />
                   <Route path="services" element={<Services pageData={{pageTitle:"Services",coverImage:'assets/images/backgrounds/page-header-bg-1-1.jpg'}}/>} />
                   <Route path="services/:id/service/" element={<Service pageData={{pageTitle:"Service",coverImage:'assets/images/backgrounds/page-header-bg-1-1.jpg'}}/>} />
+                  <Route path="slider" element={<Slider />} />
                   <Route path="settings/" element={<SiteSettings/>} >
                       <Route index element={<GeneralSettings/>} />
                       <Route path="general" element={<GeneralSettings/>} />
@@ -162,18 +177,16 @@ try {
                       <Route path="site-images" element={<SiteImage/>} />
                       <Route path="terms-and-conditions" element={<TermsConditionsSetting/>} />
                   </Route> 
-                 
+              </Route>
             </Route> 
              {/* End Protected Routes */}
-
-
             </Route>
             </Route>
            </Route>
             <Route path='*'  element={<Navigate to="error/404"/>}/>
           </Routes>
-
+</>
   );
 }
 
-export default App;
+export default React.memo(App);

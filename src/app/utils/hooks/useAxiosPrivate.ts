@@ -1,10 +1,8 @@
-import axios, { axiosPrivate } from "../../api/axios";
+import  { axiosPrivate } from "../../api/axios";
 import { useEffect } from "react";
 import useRefreshToken from './useRefreshToken';
-import {useDispatch, useSelector } from 'react-redux';
-import {setCredentials} from '../../../features/auth/authSlice';
+import { useSelector } from 'react-redux';
 import { selectCurrentToken } from '../../../features/auth/authSlice';
-import {useLoginMutation} from '../../../features/auth/authApiSlice';
 
 const useAxiosPrivate = ()=>{
     const refresh = useRefreshToken();
@@ -41,8 +39,8 @@ return()=>{
 
 
     },[token, refresh])
-    return axiosPrivate; 
+    return axiosPrivate
 }
 
 
-export default axiosPrivate
+export default useAxiosPrivate

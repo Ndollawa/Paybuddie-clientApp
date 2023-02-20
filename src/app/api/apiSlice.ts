@@ -1,13 +1,20 @@
 import { BaseQueryFn } from '@reduxjs/toolkit/dist/query/baseQueryTypes';
 import {createApi, fetchBaseQuery} from '@reduxjs/toolkit/query/react';
-import { setCredentials, logOut } from '../../features/auth/authSlice';
+import { setCredentials } from '../../features/auth/authSlice';
+import { RootState } from '../stores/store';
 
 
+
+ // Prepare the headers with token 
 const baseQuery = fetchBaseQuery({
     baseUrl: 'http://localhost:3500',
     credentials: 'include',
-    prepareHeaders:(headers, {getState}:any) =>{
-        const token = getState()?.auth?.token;
+    prepareHeaders:(headers,{getState}) =>{
+        const token =(getState() as RootState).auth.token;
+        //   headers.set("Content-Type","multipart/form-data")
+        //   headers.set("Accepts","application/json")
+        //   headers.set("Accepts","multiparts/form-data")
+        // console.log(token)
         if(token){
             headers.set("authorization",`Bearer ${token}`)
         }
@@ -41,7 +48,7 @@ const baseQueryWithReauth:BaseQueryFn = async (args,api, extraOptions) =>{
 
 export const apiSlice = createApi({
     baseQuery: baseQueryWithReauth,
-    tagTypes:['User','Blog','Faq','Setting'],
+    tagTypes:['User','Profile','Blog','Faq','Setting','Slider','Message'],
     endpoints: (builders) =>({})
 
 })

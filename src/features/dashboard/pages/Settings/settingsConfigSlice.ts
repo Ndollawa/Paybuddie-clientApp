@@ -1,12 +1,12 @@
 import {createSlice, Selector} from '@reduxjs/toolkit';
-import logo from '../../../../paybuddie4.png'
-import logoDark from '../../../../paybuddie-white.png'
-import favicon from '../../../../favicon.png'
 
 enum Styles{STYLE_1=1,STYLE_2, STYLE_3};
 const initialState = {
         _id:"",
         landingPageConfig:{
+            showBlog:null,
+            showAffiliate:null,
+            showTestimonial:null,
             navStyle:Styles.STYLE_1,
             sliderStyle:Styles.STYLE_1,
             aboutStyle:Styles.STYLE_1,
@@ -16,44 +16,47 @@ const initialState = {
         },
         dashboardConfig:{
             layoutOptions: {
-            typography: "poppins",
-            version: "light",
-            layout: "vertical",
-            headerBg: "color_1",
-            primary: "color_4",
-            navheaderBg: "color_4",
-            sidebarBg: "color_1",
-            sidebarStyle: "full",
-            sidebarPosition: "fixed",
-            headerPosition: "fixed",
-            containerLayout: "full",
-            direction: 'ltr'
+            typography: "",
+            version: "",
+            layout: "",
+            headerBg: "",
+            primary: "",
+            navheaderBg: "",
+            sidebarBg: "",
+            sidebarStyle: "",
+            sidebarPosition: "",
+            headerPosition: "",
+            containerLayout: "",
+            direction: ''
 
             }
         },
         companyDetails:{
-            siteName:"",
+            siteName:null,
             logo:"",
             logoDark:"",
-            favicon:"",
-            city:"",
-            state:"",
-            country:"",
-            zip:"",
-            description:"",
+            favicon:null,
+            pagesBg:"",
+            aboutUsBg:'',
+            backgroundImage:'',
+            city:null,
+            state:null,
+            country:null,
+            zip:null,
+            description:null,
             email:[],
             contact:[],
-            address:"",
-            activeHours:"",
-            facebookHandle:"",
-            twitterHandle:"",
-            instagram:"",
-            whatsapp:""
+            address:null,
+            activeHours:null,
+            facebookHandle:null,
+            twitterHandle:null,
+            instagram:null,
+            whatsapp:null
         },
         pages:{
-            aboutUs:"",
-            privacyPolicy:"",
-            termsCondition:""
+            aboutUs:null,
+            privacyPolicy:null,
+            termsCondition:null
         }
 }
 

@@ -1,15 +1,18 @@
-import React,{FormEvent, FormEventHandler} from "react";
+import React,{FormEvent, FormEventHandler, useEffect} from "react";
 import { useDispatch ,useSelector} from "react-redux";
 import useInput from "../../../../../app/utils/hooks/useInput";
 import { useGeneralSettingsMutation } from "../settingApiSlice";
-import { setAppGeneralSetting } from "../settingsConfigSlice";
+import { setAppGeneralSetting, useSettings } from "../settingsConfigSlice";
 import { useCompanyDetails } from "../settingsConfigSlice";
+import showToast from "../../../../../app/utils/hooks/showToast";
+import 'react-toastify/dist/ReactToastify.css';
 
 const GeneralSettings = () => {
 const dispatch = useDispatch();
+const {_id} = useSelector(useSettings)
 const {email,contact,zip,description,siteName,activeHours,city,state,country,address,facebookHandle,twitterHandle,instagram,whatsapp} = useSelector(useCompanyDetails);
 const [generalSettings,isLoading] = useGeneralSettingsMutation();
-
+// alert(_id)
 
 const [companyName, setCompanyName, companyNameAttr] = useInput(siteName)
 const [companyEmail, setCompanyEmail, companyEmailAttr] = useInput(email)
@@ -37,8 +40,8 @@ const data ={
       state:companyState,
       country:companyCountry,
       description:companyDescription,
-      email:[companyEmail],
-      contact:[companyContact],
+      email:companyEmail,
+      contact:companyContact,
       address:companyAddress,
       activeHours:companyActiveHours,
       facebookHandle:companyFacebookHandle,
@@ -48,10 +51,11 @@ const data ={
   
   }
 try{
-  const res = await generalSettings(data).unwrap()
+  const res = await generalSettings({_id,data}).unwrap()
 dispatch(setAppGeneralSetting(data))
-}catch(error){
-  
+showToast('success',"Settings Updated successfully!")
+} catch (error:any) {
+  showToast('error',error)
 }
 
 }
@@ -128,18 +132,15 @@ dispatch(setAppGeneralSetting(data))
              
                 <div className="mb-3 col-md-4">
                   <label className="form-label"><strong>State</strong></label>
-                  <select
+                  <input
                     id="inputState"
-                    className="default-select form-control wide"
+                    type='text'
+                    className="form-control"
                     value={companyState}
                     onChange={setCompanyState}
                     {...companyStateAttr}
-                  >
-                    <option value="">Choose...</option>
-                    <option>Option 1</option>
-                    <option>Option 2</option>
-                    <option>Option 3</option>
-                  </select>
+                  />
+                  
                 </div>
                 <div className="mb-3 col-md-2">
                   <label className="form-label"><strong>Zip</strong></label>
@@ -225,11 +226,11 @@ dispatch(setAppGeneralSetting(data))
                     placeholder=""
                     rows="10"
                     onChange={setCompanyDescription}
-                    {...companyDescriptionAttr}> value={companyDescription}</textarea>
+                    {...companyDescriptionAttr} value={companyDescription}></textarea>
                 
                 </div>
               </div>
-              <div className="d-flex justify-content-end">
+              <div className="card-footer d-flex justify-content-end">
               <button type="submit" className="btn btn-primary">
                 Update Site Info
               </button></div>
@@ -241,4 +242,4 @@ dispatch(setAppGeneralSetting(data))
   );
 };
 
-export default GeneralSettings;
+export default React.memo(GeneralSettings);

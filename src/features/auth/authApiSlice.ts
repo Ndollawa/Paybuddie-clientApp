@@ -1,17 +1,20 @@
 import { apiSlice } from "../../app/api/apiSlice";
 import { logOut , setCredentials} from "./authSlice";
-
+import jwt_decode from 'jwt-decode';
+import { authProps } from "../../app/utils/props/authProps";
+import localStorage from "redux-persist/es/storage";
 
 export const authApiSlice = apiSlice.injectEndpoints({
     endpoints:builder=>({
-        login: builder.mutation({
-            query:credentials=>({
+        login:builder.mutation<any, any>({
+           query:credentials=>({
                 url: '/auth/login',
                 method: 'POST',
                 body:{
                     ...credentials
-                }
-            })
+                },
+                
+            }),
         }),
         register:builder.mutation({
             query:credentials=>({
@@ -35,6 +38,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
                     setTimeout(()=>{
                    dispatch(apiSlice.util.resetApiState())
                     },1000) 
+                    localStorage.removeItem('persist:rootApp')
                 } catch (error) {
                     console.log(error)
                 }
@@ -49,9 +53,16 @@ export const authApiSlice = apiSlice.injectEndpoints({
                 try {
                     const {data}= await queryFulfilled
                     const{accessToken} = data
-                    dispatch(setCredentials({accessToken}))
+                    // console.log(accessToken)
+                    const decodedToken:authProps['auth'] | undefined = accessToken
+                    ? jwt_decode(accessToken)
+                       : undefined;
+                    const  user_info = decodedToken?.userInfo
+            //    console.log(user_info)
+                    dispatch(setCredentials({accessToken,user_info}))
                 } catch (error) {
                     
+                    console.log(error)
                 }
             }
         }),
